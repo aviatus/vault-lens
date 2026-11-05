@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vault Lens</title>
+  <link rel="stylesheet" href="vendor/radix-colors.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <button id="back" class="icon" title="Back to vault list" aria-label="Back to vault list" hidden></button>
+    <img src="icons/icon.svg" class="logo" alt="" width="20" height="20"><h1>Vault Lens</h1>
+    <span class="spacer"></span>
+    <button id="lock-now" class="icon" title="Lock now (PIN)" aria-label="Lock now" hidden></button>
+    <button id="open-settings" class="icon" title="Settings" aria-label="Settings"></button>
+    <div id="busy" class="busy" role="progressbar" aria-label="Waiting for the vault" hidden></div>
+  </header>
+
+  <div id="error-box" class="error" hidden>
+    <span id="error" role="alert"></span>
+    <button id="error-action" class="small" hidden></button>
+  </div>
+
+  <main>
+    <section id="pin" hidden>
+      <h2>Locked</h2>
+      <p class="sub">Enter your PIN to continue. Your saved tokens stay encrypted until then.</p>
+      <form id="pin-form" autocomplete="off">
+        <label>PIN <input id="pin-input" type="password" inputmode="numeric" autocomplete="off" spellcheck="false" required></label>
+        <button type="submit">Unlock</button>
+      </form>
+      <button id="pin-forgot" class="ghost reset">Forgot PIN? Reset the PIN and saved tokens</button>
+    </section>
+
+    <section id="list" hidden>
+      <ul id="vaults" class="rows"></ul>
+      <details id="add">
+        <summary id="add-title">+ Add vault</summary>
+        <form id="add-form" autocomplete="off">
+          <label>Name <input id="add-name" placeholder="Prod Vault"></label>
+          <label>Address <input id="add-url" placeholder="https://vault.example.com" required></label>
+          <p id="add-http" class="notice warn" hidden>Plain http: the token is sent unencrypted and any local process listening on this port can read it. Use it for local development only.</p>
+          <label>Environment
+            <select id="add-env">
+              <option value="">Not set</option>
+              <option value="prod">Prod</option>
+              <option value="test">Test</option>
+              <option value="dev">Dev</option>
+            </select>
+          </label>
+          <!-- Access first: Chrome's permission prompt can close the popup, so it is asked before the token. -->
+          <div id="add-access" class="access" hidden>
+            <p id="add-access-text" class="sub"></p>
+            <button type="button" id="add-allow">Allow access</button>
+          </div>
+          <div id="add-secret" hidden>
+          <label for="add-token">Token</label>
+          <div class="input-row">
+            <input id="add-token" type="password" autocomplete="off" spellcheck="false">
+            <button type="button" id="token-toggle" class="icon" title="Show/hide token" aria-label="Show/hide token"></button>
+          </div>
+          <div id="add-pin-setup" hidden>
+            <p class="sub">Choose a PIN. It encrypts your saved tokens and is never stored; you enter it instead of the tokens.</p>
+            <label>PIN <input id="add-pin" type="password" inputmode="numeric" autocomplete="off"></label>
+            <label>Repeat PIN <input id="add-pin2" type="password" inputmode="numeric" autocomplete="off"></label>
+          </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="add-cancel" class="ghost" hidden>Cancel</button>
+            <button type="submit" id="add-submit">Add</button>
+          </div>
+        </form>
+      </details>
+    </section>
+
+    <section id="settings" hidden>
+      <h2>Settings</h2>
+
+      <div class="group">
+        <h3>PIN</h3>
+        <p id="pin-status" class="sub"></p>
+        <details id="pin-change">
+          <summary>Change PIN</summary>
+          <form id="pin-set-form" autocomplete="off">
+            <label>Current PIN <input id="pin-current" type="password" inputmode="numeric" autocomplete="off" required></label>
+            <label>New PIN <input id="pin-new" type="password" inputmode="numeric" autocomplete="off" required></label>
+            <label>Repeat new PIN <input id="pin-new2" type="password" inputmode="numeric" autocomplete="off" required></label>
+            <button type="submit" id="pin-save">Save new PIN</button>
+          </form>
+        </details>
+        <button type="button" id="settings-reset" class="ghost reset">Forgot PIN? Reset the PIN and saved tokens</button>
+      </div>
+
+      <div class="group">
+        <h3>Locking</h3>
+        <label>Ask for the PIN again after
+          <select id="set-pinttl">
+            <option value="5">5 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
+        </label>
+        <label>Lock when the browser has been in the background for
+          <select id="set-autolock">
+            <option value="-1">Never</option>
+            <option value="0">Immediately</option>
+            <option value="1">1 minute</option>
+            <option value="5">5 minutes</option>
+            <option value="15">15 minutes</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="group">
+        <h3>Clipboard</h3>
+        <label>Clear copied values from the clipboard
+          <select id="set-clip">
+            <option value="0">Never</option>
+            <option value="30">after 30 s</option>
+            <option value="60">after 60 s</option>
+            <option value="90">after 90 s</option>
+            <option value="120">after 120 s</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="sub shortcut">Shortcut: <kbd>Alt+Shift+V</kbd> opens Vault Lens · <a href="#" id="shortcuts-link">change</a></p>
+    </section>
+
+    <section id="browse" hidden>
+      <div class="bar">
+        <span id="env-chip"></span>
+        <select id="switch" aria-label="Switch vault" title="Switch vault"></select>
+        <button id="open-ui" class="icon" title="Open this page in the vault's web UI (new tab, for writes and admin)" aria-label="Open this page in the vault web UI"></button>
+      </div>
+      <p id="token-info" class="sub"></p>
+      <div class="bar">
+        <nav id="crumbs" class="crumbs" aria-label="Location"></nav>
+        <button id="copy-path" class="icon" title="Copy path" aria-label="Copy path"></button>
+      </div>
+          <input id="search" type="search" placeholder="Search secrets…" autocomplete="off" spellcheck="false" aria-label="Search secrets">
+          <p id="search-info" class="sub" hidden></p>
+          <ul id="items" class="rows"></ul>
+          <div id="secret-view" hidden>
+            <div class="secret-head">
+              <select id="version" aria-label="Version" title="Version history" hidden></select>
+              <p id="secret-meta" class="sub"></p>
+              <button class="icon fav" title="Add to favorites" aria-label="Add to favorites"></button>
+              <span class="seg" role="group" aria-label="Copy the whole secret">
+                <button id="copy-json" class="ghost small" title="Copy the secret as JSON">JSON</button>
+                <button id="copy-env" class="ghost small" title="Copy the secret in .env format">.env</button>
+              </span>
+            </div>
+            <p id="old-version" class="notice" hidden>You are viewing an older version.</p>
+            <p id="stale" class="notice warn" hidden></p>
+            <table id="secret"><tbody></tbody></table>
+          </div>
+          <div id="totp-view" hidden>
+            <div class="secret-head">
+              <p class="sub grow">One-time code (TOTP)</p>
+              <button class="icon fav" title="Add to favorites" aria-label="Add to favorites"></button>
+            </div>
+            <div class="totp">
+              <span id="totp-ring" class="ring" aria-hidden="true"></span>
+              <code id="totp-code"></code>
+              <span id="totp-left" class="sub"></span>
+              <button id="totp-copy" class="icon" title="Copy code" aria-label="Copy code"></button>
+            </div>
+          </div>
+    </section>
+  </main>
+
+  <div id="curtain" hidden>
+    <button id="curtain-show">Hidden while Vault Lens is in the background.<br>Click to show.</button>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

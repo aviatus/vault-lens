@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Vault Lens",
+  "version": "0.7.0",
+  "description": "Read-only viewer for HashiCorp Vault KV/TOTP secrets. Tokens are stored encrypted with your PIN; the PIN itself is never stored.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvCZydXXnF3xYTC2IBGP8H1fS5Lgm/vGOUlJniZPLSVNwLSyRmiGJS/AB526PEWnAniYmaF+E/HZYyDQ4LsP5GC9QgjVwPrMAGO6N9tZ3EoPDynhKiU1kPUewbCxpWLJ0Lc8xTTH+IrvywkrRuZR/MvoZAWd/yRIQgb7LNZgpuFqs9vVS8Em08viR8UOREdk2gmUxGhSqyPolCjw0QXIXFAqQ7KDL9kxXWrjrsPvKL79L2F0ji7jC7DuJByPm76hIY5v5yJG9mOaHGu3heO+eQH554G4ssAL16RhenMU/ZCKCv/oaQjP4+sWkBh25WvTt915ZTYNJUZ4dE3YoBM/s+wIDAQAB",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "offscreen"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Vault Lens",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+V"
+      },
+      "description": "Open Vault Lens"
+    }
+  }
+}
